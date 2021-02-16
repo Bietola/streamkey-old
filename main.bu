@@ -5,10 +5,22 @@ use autodie;
 
 # TODO: Replace with config file
 my %sym2press = (
+    # Modifier keys
+    '<!shift!>' => Hold('Shift'),
+    '<!ctrl!>' => Hold('Ctrl'),
+    '<!meta!>' => Hold('Alt'),
     '<!super!>' => Hold('Super'),
-    '<!cr!>' => Press('<cr>'),
-    '4' => 'super+4',
-    '5' => 'super+5',
+
+    # Special characters
+    '<!cr!>' => Press('KP_Enter'),
+    '<!bs!>' => Undo(),
+
+    # Any other single char is interpreted as is
+    '.' => Press('\0'),
+
+    # Other strings are not handled
+    '.+' => Err('Unhandled sym: \0'),
+    '' => Err('Received empty sym'),
 );
 
 my $key_re = qr/Key\((?<text>.*)\)/;
@@ -17,21 +29,13 @@ while (my $line = <STDIN>) {
     chomp $line;
 
     if ($line =~ /$key_re/) {
-        say "key event: $line, [$+{text}]";
+        #DB say "key event: $line, [$+{text}]";
 
         my $text = $+{text};
-        my $to_press;
+        my $action = sym2press($text);
 
-        if ($text =~ /[a-zA-Z]+/) {
-            $to_press = $text;
-        } else {
-            $to_press = $sym2press{$text} // 'NONE';
-        }
-
-        say "text: $text; pressing: $to_press";
-
-        if ($to_press ne 'NONE') {
-            `xdotool key $to_press`;
-        }
+        perform(action);
+        
+        #DB say "text: $text; pressing: $to_press";
     }
 }
